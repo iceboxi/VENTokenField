@@ -22,7 +22,10 @@
 
 #import "VENToken.h"
 
-@interface VENToken ()
+@interface VENToken () {
+    UIColor *additonColor;
+    UIColor *subtractionColor;
+}
 @property (strong, nonatomic) UITapGestureRecognizer *tapGestureRecognizer;
 @property (strong, nonatomic) IBOutlet UILabel *titleLabel;
 @property (strong, nonatomic) IBOutlet UIView *backgroundView;
@@ -36,6 +39,8 @@
     self = [[[NSBundle bundleForClass:[self class]] loadNibNamed:NSStringFromClass([self class]) owner:self options:nil] firstObject];
     if (self) {
         [self setUpInit];
+        additonColor = [UIColor colorWithRed:150./255. green:203./255. blue:106./255. alpha:1];
+        subtractionColor = [UIColor colorWithRed:250./255. green:95./255. blue:78./255. alpha:1];
     }
     return self;
 }
@@ -45,14 +50,13 @@
     self.backgroundView.layer.cornerRadius = 5;
     self.tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(didTapToken:)];
     self.colorScheme = [UIColor blueColor];
-    self.titleLabel.textColor = self.colorScheme;
     [self addGestureRecognizer:self.tapGestureRecognizer];
 }
 
 - (void)setTitleText:(NSString *)text
 {
     self.titleLabel.text = text;
-    self.titleLabel.textColor = self.colorScheme;
+    [self setAttributeColor:self.colorScheme];
     [self.titleLabel sizeToFit];
     self.frame = CGRectMake(CGRectGetMinX(self.frame), CGRectGetMinY(self.frame), CGRectGetMaxX(self.titleLabel.frame) + 3, CGRectGetHeight(self.frame));
     [self.titleLabel sizeToFit];
@@ -63,17 +67,36 @@
     _highlighted = highlighted;
     UIColor *textColor = highlighted ? [UIColor whiteColor] : self.colorScheme;
     UIColor *backgroundColor = highlighted ? self.colorScheme : [UIColor clearColor];
-    self.titleLabel.textColor = textColor;
+    [self setAttributeColor:textColor];
     self.backgroundView.backgroundColor = backgroundColor;
 }
 
 - (void)setColorScheme:(UIColor *)colorScheme
 {
     _colorScheme = colorScheme;
-    self.titleLabel.textColor = self.colorScheme;
+    [self setAttributeColor:self.colorScheme];
     [self setHighlighted:_highlighted];
 }
 
+- (void)setAttributeColor:(UIColor *)color {
+    NSString *text = self.titleLabel.text;
+    NSDictionary *attrs = @{ NSForegroundColorAttributeName : color };
+    NSMutableAttributedString *attrStr = [[NSMutableAttributedString alloc] initWithString:text attributes:attrs];
+    if (text.length > 5) {
+        NSString *code = [text substringFromIndex:[text length] - 4];
+        if ([code isEqualToString:@" + ,"]) {
+            NSRange range = NSMakeRange([text length] - 3, 1);
+            [attrStr addAttribute:NSForegroundColorAttributeName value:additonColor range:range];
+            [attrStr addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:18] range:range];
+        } else if ([code isEqualToString:@" - ,"]) {
+            NSRange range = NSMakeRange([text length] - 3, 1);
+            [attrStr addAttribute:NSForegroundColorAttributeName value:subtractionColor range:range];
+            [attrStr addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:18] range:range];
+        }
+    }
+    
+    [self.titleLabel setAttributedText:attrStr];
+}
 
 #pragma mark - Private
 
